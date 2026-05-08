@@ -1,204 +1,175 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GORTINHO TV - Oficial</title>
+    <title>Gordinho Stream</title>
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
+        :root { --main-color: #e50914; --bg-color: #050505; }
+        body { background: var(--bg-color); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        
+        header { padding: 20px; text-align: center; background: #000; border-bottom: 2px solid var(--main-color); position: sticky; top: 0; z-index: 100; }
+        
+        /* Estilo do novo texto abaixo do título */
+        .subtitle { 
+            color: #888; 
+            font-size: 14px; 
+            margin-top: -10px; 
+            margin-bottom: 15px; 
+            font-weight: normal; 
+            letter-spacing: 1px;
+        }
+
+        .search-container { margin: 20px 0; }
+        input { padding: 12px; width: 60%; border-radius: 5px; border: none; background: #222; color: white; outline: none; }
+        button { padding: 12px 20px; background: var(--main-color); color: white; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+        .movie-card {
+            cursor: pointer;
+            transition: 0.3s;
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+        .movie-card:hover { transform: scale(1.05); border: 1px solid var(--main-color); }
+        .movie-card img { width: 100%; display: block; }
+        .movie-info { padding: 10px; font-size: 13px; text-align: center; font-weight: bold; }
+
+        #player-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-wrapper {
+            width: 98%;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden; /* Corta o que sobrar */
             background: #000;
-            color: white;
-            min-height: 100vh;
         }
 
-        /* TELA DE LOGIN */
-        #loginScreen {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; background: #000;
-        }
-        .login-box {
-            background: #141414; padding: 3rem; border-radius: 10px;
-            width: 90%; max-width: 400px; text-align: center;
-        }
-        input, select, textarea {
-            width: 100%; padding: 0.8rem; margin: 0.5rem 0;
-            background: #333; border: none; color: white; border-radius: 5px;
-        }
-        .btn-red {
-            width: 100%; padding: 1rem; background: #e50914; border: none;
-            color: white; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px;
+        /* Truque para esconder o embedmovies.org no canto superior */
+        .video-wrapper::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 180px; /* Largura para cobrir o texto */
+            height: 40px;  /* Altura da marca d'água */
+            background: black; 
+            z-index: 10;
+            pointer-events: none;
         }
 
-        /* APP PRINCIPAL */
-        #mainApp { display: none; padding-top: 70px; }
-        header {
-            background: rgba(0,0,0,0.9); padding: 1rem 0; position: fixed; top: 0; width: 100%; 
-            z-index: 1000; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #333;
+        iframe { 
+            width: 100% !important; 
+            height: auto !important; 
+            aspect-ratio: 16 / 9; 
+            border: none; 
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-        
-        .admin-only { display: none !important; }
-        .is-admin .admin-only { display: block !important; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 0; }
-        .card {
-            background: #181818; border-radius: 8px; overflow: hidden;
-            position: relative; transition: 0.3s;
-        }
-        .card:hover { transform: scale(1.05); }
-        .card-info { padding: 15px; }
-        .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; }
-        .card-meta { color: #4ecdc4; font-size: 0.8rem; margin-bottom: 8px; }
-        .card-desc { color: #aaa; font-size: 0.85rem; height: 50px; overflow: hidden; margin-bottom: 15px; }
-        
-        .del-btn {
-            position: absolute; top: 10px; right: 10px; background: red;
-            color: white; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; z-index: 10;
-        }
-        .play-btn {
-            width: 100%; padding: 10px; background: white; color: black;
-            border: none; border-radius: 4px; font-weight: bold; cursor: pointer;
-        }
+        .close-btn { margin-bottom: 15px; padding: 10px 25px; background: var(--main-color); color: white; border: none; cursor: pointer; border-radius: 50px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loginScreen">
-        <div class="login-box">
-            <h1 style="color:#e50914; margin-bottom:20px;">GORDINHO TV</h1>
-            <input type="text" id="user" placeholder="Usuário">
-            <input type="password" id="pass" placeholder="Senha">
-            <button class="btn-red" onclick="entrar()">ENTRAR</button>
-        </div>
+<header>
+    <h1></h1>
+    <p class="subtitle">Se quiser atualizar pro Premium me chama no pv do ttk: @unitv.gg</p>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Busque um filme ou série...">
+        <button onclick="searchContent()">BUSCAR</button>
     </div>
+</header>
 
-    <div id="mainApp">
-        <header class="container">
-            <div style="font-size: 1.5rem; font-weight: bold; color:#e50914;">GORTINHO TV</div>
-            <div style="display: flex; gap: 10px;">
-                <button class="admin-only" onclick="openM()" style="padding:5px 15px; cursor:pointer;">+ ADICIONAR</button>
-                <button onclick="location.reload()" style="background:none; border:1px solid #fff; color:#fff; cursor:pointer; padding:5px 10px; font-size:12px;">SAIR</button>
-            </div>
-        </header>
+<div class="movie-grid" id="movieGrid"></div>
 
-        <div class="container">
-            <div id="grid" class="grid"></div>
-        </div>
-    </div>
+<div id="player-overlay">
+    <button class="close-btn" onclick="closePlayer()">FECHAR X</button>
+    <div id="video-content" class="video-wrapper"></div>
+</div>
 
-    <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center;">
-        <div class="login-box" style="text-align: left;">
-            <h3 style="color:#e50914; margin-bottom:15px;">Novo Filme/Série</h3>
-            <input type="file" id="fFile" accept="video/*">
-            <input type="text" id="fTitle" placeholder="Título">
-            <select id="fType"><option value="filme">Filme</option><option value="serie">Série</option></select>
-            <input type="number" id="fRating" placeholder="Nota 1-10">
-            <textarea id="fDesc" placeholder="Sinopse" rows="3"></textarea>
-            <button class="btn-red" id="saveBtn" onclick="salvar()">SALVAR</button>
-            <button onclick="closeM()" style="width:100%; background:none; color:gray; border:none; margin-top:10px; cursor:pointer;">Cancelar</button>
-        </div>
-    </div>
+<script>
+    const API_KEY = '8e6a4fe3b8b0c240511a0c5cc382ca81';
+    const grid = document.getElementById('movieGrid');
 
-    <script>
-        const USERS = { "Miguel": "260711", "user": "12345" };
-        let currentUser = "";
-        let db;
-        // Centralizei o nome do banco para não dar erro
-        const DB_NAME = "CineRecsDB_V3"; 
-        let movies = JSON.parse(localStorage.getItem('movies_v3')) || [];
+    async function loadPopular() {
+        const url = `https://api.themoviedb.org/3/trending/all/week?api_key=${API_KEY}&language=pt-BR`;
+        fetchData(url);
+    }
 
-        function entrar() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            if (USERS[u] === p) {
-                currentUser = u;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                if(u === 'Miguel') document.getElementById('mainApp').classList.add('is-admin');
-                conectarDB();
-            } else { alert("Login incorreto!"); }
-        }
+    async function searchContent() {
+        const query = document.getElementById('searchInput').value;
+        if(!query) return;
+        grid.innerHTML = "<p>Buscando...</p>";
+        const url = `https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&language=pt-BR&query=${query}`;
+        fetchData(url);
+    }
 
-        function conectarDB() {
-            const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore("videos");
-            req.onsuccess = e => { db = e.target.result; listar(); };
-        }
-
-        function listar() {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = movies.map(m => `
-                <div class="card">
-                    ${currentUser === 'Miguel' ? `<button class="del-btn" onclick="remover('${m.id}')">✕</button>` : ''}
-                    <div style="height:150px; background:#222; display:flex; align-items:center; justify-content:center; font-size:3rem;">🎬</div>
-                    <div class="card-info">
-                        <div class="card-title">${m.title}</div>
-                        <div class="card-meta">${m.type.toUpperCase()} • ⭐ ${m.rating || '0'}/10</div>
-                        <div class="card-desc">${m.desc || ''}</div>
-                        <button class="play-btn" onclick="ver('${m.id}')">ASSISTIR</button>
-                    </div>
-                </div>
-            `).reverse().join('');
-        }
-
-        function ver(id) {
-            const req = db.transaction("videos").objectStore("videos").get(id);
-            req.onsuccess = () => {
-                const url = URL.createObjectURL(req.result);
-                const win = window.open("", "_blank");
-                win.document.write(`
-                    <body style="margin:0; background:#000; display:flex; align-items:center; justify-content:center; height:100vh;">
-                        <video controls autoplay controlsList="nodownload" oncontextmenu="return false;" style="max-width:100%; max-height:100%;">
-                            <source src="${url}">
-                        </video>
-                    </body>
-                `);
-            };
-        }
-
-        function salvar() {
-            const file = document.getElementById('fFile').files[0];
-            const title = document.getElementById('fTitle').value;
-            if(!file || !title) return alert("Falta vídeo ou título!");
-
-            document.getElementById('saveBtn').disabled = true;
-            const id = "vid_" + Date.now();
+    async function fetchData(url) {
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            grid.innerHTML = "";
             
-            const tx = db.transaction("videos", "readwrite");
-            tx.objectStore("videos").add(file, id).onsuccess = () => {
-                movies.push({
-                    id, title, 
-                    type: document.getElementById('fType').value,
-                    rating: document.getElementById('fRating').value,
-                    desc: document.getElementById('fDesc').value
-                });
-                localStorage.setItem('movies_v3', JSON.stringify(movies));
-                closeM();
-                document.getElementById('saveBtn').disabled = false;
-                listar();
-            };
+            data.results.forEach(item => {
+                if(!item.poster_path) return;
+                const isTV = item.media_type === 'tv' || !item.release_date;
+                const title = item.title || item.name;
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.innerHTML = `
+                    <img src="https://image.tmdb.org/t/p/w500${item.poster_path}">
+                    <div class="movie-info">${title}</div>
+                `;
+                card.onclick = () => openPlayer(item.id, isTV);
+                grid.appendChild(card);
+            });
+        } catch (error) {
+            grid.innerHTML = "<p>Erro ao conectar com o TMDB.</p>";
         }
+    }
 
-        function remover(id) {
-            if(confirm("Apagar para sempre?")) {
-                // Remove da lista visual
-                movies = movies.filter(m => m.id !== id);
-                localStorage.setItem('movies_v3', JSON.stringify(movies));
-                
-                // Remove do banco de arquivos
-                const tx = db.transaction("videos", "readwrite");
-                tx.objectStore("videos").delete(id).onsuccess = () => {
-                    listar();
-                };
-            }
-        }
+    function openPlayer(id, isTV) {
+        const type = isTV ? 'serie' : 'filme';
+        const videoSource = `https://myembed.biz/${type}/${id}`; 
 
-        function openM() { document.getElementById('modal').style.display = 'flex'; }
-        function closeM() { document.getElementById('modal').style.display = 'none'; }
-    </script>
+        document.getElementById('player-overlay').style.display = 'flex';
+        const container = document.getElementById('video-content');
+        
+        container.innerHTML = `
+            <iframe 
+                src="${videoSource}" 
+                allowfullscreen 
+                scrolling="no"
+                loading="lazy">
+            </iframe>
+        `;
+    }
+
+    function closePlayer() {
+        document.getElementById('video-content').innerHTML = ""; 
+        document.getElementById('player-overlay').style.display = 'none';
+    }
+
+    loadPopular();
+</script>
+
 </body>
 </html>
-
